@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Top Makelaar</string>
+    <string name="retry">Retry</string>
+    <string name="top_makelaar">Top Makelaar</string>
+    <string name="all">All</string>
+    <string name="tuin">Tuin</string>
+    <string name="empty">Oppss no Makelaar found</string>
+</resources>
