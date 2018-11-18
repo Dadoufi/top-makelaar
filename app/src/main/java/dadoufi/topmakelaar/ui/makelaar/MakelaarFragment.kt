@@ -17,6 +17,7 @@ class MakelaarFragment : BaseFragment<List<TopMakelaar>, MakelaarViewModel>() {
 
     private lateinit var controller: MakelaarController
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         controller = MakelaarController()
@@ -38,7 +39,7 @@ class MakelaarFragment : BaseFragment<List<TopMakelaar>, MakelaarViewModel>() {
         }
 
 
-        if (savedInstanceState != null) {
+        if (savedInstanceState != null) { //request data from view model
             handleChecked(savedInstanceState.getBoolean("filter", false))
         } else {
             viewModel.setQuery("")
@@ -57,12 +58,15 @@ class MakelaarFragment : BaseFragment<List<TopMakelaar>, MakelaarViewModel>() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean("filter", tuinFilterChip.isChecked)
+        outState.putBoolean(
+            "filter",
+            tuinFilterChip.isChecked
+        ) // save selected filter onSavedInstance for orientation changes
     }
 
     override fun handleSuccessState(data: List<TopMakelaar>?) {
         super.handleSuccessState(data)
-        controller.setData(data)
+        controller.setData(data) //update recycler view with data
     }
 
 

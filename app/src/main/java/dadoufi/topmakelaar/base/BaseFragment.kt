@@ -20,7 +20,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
@@ -77,57 +76,44 @@ abstract class BaseFragment<Result : Any, VM : BaseViewModel<Result>> :
         setupSwipeToRefresh()
         setUpAppbarElevation()
 
-        swipeRefreshLayout = parentView.findViewById(R.id.swipeRefresh)
 
+        if (savedInstanceState != null) {
+            swipeRefreshLayout?.isRefreshing = savedInstanceState.getBoolean("refreshing", false)
+        }
 
         viewModel.uiStateLiveData.observeK(this) {
-            when (it) {
-                is UiState.Loading -> {
-                    handleLoadingState()
-                }
-                is UiState.LoadMore -> {
-                    handleLoadMoreState()
-                }
-                is UiState.Error -> {
-                    handleErrorState(it)
-                }
-                is UiState.Success -> {
-                    handleSuccessState(it.data)
-                }
+            //observe State changes and handle ui
+            handleUiState(it)
+        }
+
+
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        swipeRefreshLayout?.let {
+            outState.putBoolean("refreshing", it.isRefreshing)
+        }
+
+    }
+
+    private fun handleUiState(it: UiState<Result>?) {
+        when (it) {
+            is UiState.Loading -> {
+                handleLoadingState()
+            }
+            is UiState.LoadMore -> {
+                handleLoadMoreState()
+            }
+            is UiState.Error -> {
+                handleErrorState(it)
+            }
+            is UiState.Success -> {
+                handleSuccessState(it.data)
             }
         }
-
-
     }
 
-    override fun postponeEnterTransition() {
-        super.postponeEnterTransition()
-        postponed = true
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        if (postponed && !startedTransition) {
-            // If we're postponed and haven't started a transition yet, we'll delay for a max of 2000ms
-            view?.postDelayed(::scheduleStartPostponedTransitions, 2000)
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        startedTransition = false
-    }
-
-    protected fun scheduleStartPostponedTransitions() {
-        if (!startedTransition) {
-            (view?.parent as? ViewGroup)?.doOnPreDraw {
-                startPostponedEnterTransition()
-                activity?.startPostponedEnterTransition()
-            }
-            startedTransition = true
-        }
-    }
 
     open fun handleSuccessState(data: Result?) {
         swipeRefreshLatch.refreshing = false
@@ -141,12 +127,10 @@ abstract class BaseFragment<Result : Any, VM : BaseViewModel<Result>> :
             }
             is UiState.Error.RefreshError -> {
 
-                hasPendingSnackBar = createSnackBar(parentView, uiState) {
+                createSnackBar(parentView, uiState) {
                     viewModel.callRefresh()
-                }
-                if (!startedTransition) {
-                    showPendingSnackBar()
-                }
+                }.show()
+
             }
             is UiState.Error.PagedEmptyError -> {
                 handlePagedEmptyError()
@@ -154,10 +138,6 @@ abstract class BaseFragment<Result : Any, VM : BaseViewModel<Result>> :
         }
     }
 
-    private fun showPendingSnackBar() {
-        hasPendingSnackBar?.show()
-        hasPendingSnackBar = null
-    }
 
     open fun handlePagedError() = Unit
 
@@ -170,7 +150,7 @@ abstract class BaseFragment<Result : Any, VM : BaseViewModel<Result>> :
 
     }
 
-    open fun setupSwipeToRefresh() {
+    open fun setupSwipeToRefresh() { //create swipe to refresh with a minimum showing time and showing delay
         swipeRefreshLayout = parentView.findViewById(R.id.swipeRefresh)
         swipeRefreshLayout?.let { swipeRefreshLayout ->
             swipeRefreshLayout.setColorSchemeResources(
@@ -180,7 +160,7 @@ abstract class BaseFragment<Result : Any, VM : BaseViewModel<Result>> :
             swipeRefreshLatch = ProgressTimeLatch {
                 swipeRefreshLayout.isRefreshing = it
                 swipeRefreshLayout.setOnRefreshListener {
-                    viewModel.callRefresh()
+                    viewModel.callRefresh() //fetch fresh data
                     swipeRefreshLatch.refreshing = true
                 }
             }

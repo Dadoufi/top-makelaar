@@ -96,7 +96,7 @@ val lastRequest1 = LastRequestEntity(
     query = amsterdam,
     requestPage = 1,
     totalPages = 125,
-    timestamp = 234234234
+    timestamp = -1
 )
 
 val lastRequest2 = LastRequestEntity(

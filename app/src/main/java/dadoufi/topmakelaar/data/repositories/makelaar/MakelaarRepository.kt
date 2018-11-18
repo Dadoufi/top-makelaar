@@ -16,9 +16,7 @@ import dadoufi.topmakelaar.util.AppRxSchedulers
 import dadoufi.topmakelaar.util.retryOnError
 import io.reactivex.Flowable
 import retrofit2.HttpException
-import timber.log.Timber
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,7 +33,7 @@ class MakelaarRepository @Inject constructor(
     MakelaarLocalDataSource {
 
     companion object {
-        const val TIMEOUT = 60L
+        const val CACHE_TIME_WINDOW = 60L
         const val DELAY_BEFORE_RETRY = 10000L
         const val MAX_RETRY = 20
     }
@@ -47,13 +45,16 @@ class MakelaarRepository @Inject constructor(
     ): Flowable<UiState<List<TopMakelaar>>> {
         val result: Flowable<List<TopMakelaar>>
         result = when {
-            forceRefresh -> getRemoteProperties(query = query)
-            else -> lastRequestDao.getLastRequest(query)
+            forceRefresh -> getRemoteProperties(query = query) //get the freshData
+            else -> lastRequestDao.getLastRequest(query)//get theLastPage request for this query
                 .subscribeOn(schedulers.database)
                 .defaultIfEmpty(LastRequestEntity(query = query, requestPage = 1, totalPages = 25, timestamp = -1))
-                .map { it.shouldFetch() }
+                //if its empty return a default last request, which always fetches the latest data with
+
+                .map { it.shouldFetch() } //checks if the last request is within the CACHE_TIME_WINDOW
                 .toFlowable()
                 .flatMap { shouldFetch ->
+                    // if it is, we get the data from the DB else we fetch fresh data
                     if (shouldFetch) getRemoteProperties(query = query) else getLocalMakelaar(
                         query = query
                     )
@@ -61,10 +62,10 @@ class MakelaarRepository @Inject constructor(
         }
 
         return result
-            .map<UiState<List<TopMakelaar>>> { UiState.Success(it) }
-            .startWith(UiState.Loading)
+            .map<UiState<List<TopMakelaar>>> { UiState.Success(it) } //  post the data
+            .startWith(UiState.Loading) // start the stream with a loading event
             .onErrorReturn {
-                UiState.Error.RefreshError(it.message)
+                UiState.Error.RefreshError(it.message) // post the error
             }
             .observeOn(schedulers.main)
     }
@@ -79,64 +80,55 @@ class MakelaarRepository @Inject constructor(
         var totalPages = 0
         var currentPage = 1
 
-        Timber.d(TimeUnit.SECONDS.toMillis(TIMEOUT).toString())
 
-        return fundaService.getProperties(type, query, page, pageSize)
+        return fundaService.getProperties(type, query, page, pageSize) //fetch the first page
             .subscribeOn(schedulers.network)
             .map { makelaarResponse ->
-                totalPages = makelaarResponse.paging.totalPages
+                totalPages = makelaarResponse.paging.totalPages //  save to total number of pages
                 makelaarResponse
             }
             .flatMap {
-                Flowable.range(
+                Flowable.range( //loop over the page number starting from the latest page requested in case of a 401 error so that we don't start from page 1 again
                     currentPage,
                     totalPages
                 ).takeUntil { it == totalPages }
                     .flatMap { page ->
                         if (page == 1) {
-                            makelaarDao.deleteAllFiltered(query)
+                            makelaarDao.deleteAllFiltered(query) // delete previous entries if its a fresh request
                         }
-                        fundaService.getProperties(type, query, page, pageSize)
+                        fundaService.getProperties(
+                            type,
+                            query,
+                            page,
+                            pageSize
+                        ) // fetch data for each page
                             .map { response ->
                                 transactionRunner.run {
-                                    insertEntities(response, query)
-                                    insertLastRequest(query, response.paging.currentPage, response.paging.totalPages)
+                                    insertEntities(response, query) //insert data in db
+                                    insertLastRequest(
+                                        query,
+                                        response.paging.currentPage,
+                                        response.paging.totalPages
+                                    ) // save the last request
                                 }
-                                totalPages = response.paging.totalPages
-                                currentPage = response.paging.currentPage
+                                totalPages = response.paging.totalPages // update the total pages
+                                currentPage =
+                                        response.paging.currentPage //keep the current page number
                             }
                     }
 
             }
-            .retryOnError(
+            .retryOnError( // in case of request  limit  reached or other error, retry with a delay
                 predicate = { shouldRetry(it) },
                 maxRetry = MAX_RETRY,
                 delayBeforeRetry = DELAY_BEFORE_RETRY
             )
-            .skipWhile { currentPage < totalPages }
-            .concatMap { getLocalMakelaar(query = query) }
+            .skipWhile { currentPage < totalPages } //  skip the return of the local data until all pages have been requested
+            .concatMap { getLocalMakelaar(query = query) } // return the new data from DB
 
 
     }
 
-
-    /*  Flowable.range(
-      makelaarResponse.paging.currentPage + 1,
-      makelaarResponse.paging.totalPages
-      )
-      .flatMap {
-          fundaService.getProperties(type, query, it, pageSize)
-              .map { response ->
-                  insertEntities(response, query)
-                  insertLastRequest(query, it, response)
-              }
-              .doOnError {
-                  onErrorSaveLastRequest(query, makelaarResponse)
-              }
-      }
-      .doOnError {
-          onErrorSaveLastRequest(query, makelaarResponse)
-      }*/
 
     private fun shouldRetry(throwable: Throwable): Boolean {
         val retry = when (throwable) {

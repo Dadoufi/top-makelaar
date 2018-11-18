@@ -5,7 +5,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import dadoufi.topmakelaar.data.repositories.makelaar.MakelaarRepository.Companion.TIMEOUT
+import dadoufi.topmakelaar.data.repositories.makelaar.MakelaarRepository.Companion.CACHE_TIME_WINDOW
 import java.util.concurrent.TimeUnit
 
 
@@ -29,7 +29,7 @@ data class LastRequestEntity(
         if (lastFetched == -1L) return true
 
         val now = SystemClock.uptimeMillis()
-        return now - lastFetched > TimeUnit.SECONDS.toMillis(TIMEOUT)
+        return now - lastFetched > TimeUnit.SECONDS.toMillis(CACHE_TIME_WINDOW)
     }
 
 

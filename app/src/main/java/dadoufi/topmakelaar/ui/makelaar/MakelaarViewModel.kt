@@ -18,8 +18,7 @@ class MakelaarViewModel @Inject constructor(
     private val queryMutableLiveData = MutableLiveData<String>()
 
 
-    override fun callRefresh(forceUpdate: Boolean) {
-        disposables.clear()
+    override fun callRefresh(forceUpdate: Boolean) { // fetch data from db or from Network
         queryMutableLiveData.value?.let {
             disposables += repository.execute(
                 Repository.Params(
@@ -27,7 +26,7 @@ class MakelaarViewModel @Inject constructor(
                     if (forceUpdate) Repository.UpdateSource.NETWORK else Repository.UpdateSource.CACHE
                 )
             )
-                .subscribe { uiState -> uiStateLiveData.postValue(uiState) }
+                .subscribe { uiState -> uiStateLiveData.postValue(uiState) } // post the State updates on the UI
         }
 
     }
@@ -37,10 +36,15 @@ class MakelaarViewModel @Inject constructor(
         val searchQuery = BASE_QUERY + query.trim().toLowerCase(Locale.getDefault())
 
         if (searchQuery == queryMutableLiveData.value) {
-            callRefresh(false)
+            // in case of an orientation change while a request is active don't fetch local data so that it liveData wont observe the constant insertions in the DB
+            // and update the List with each insertion
+            if (disposables.isDisposed) {
+                callRefresh(false)//if its the same query fetch from DB
+            }
         } else {
+            disposables.clear()
             queryMutableLiveData.value = searchQuery
-            callRefresh(true)
+            callRefresh(true) // else fetch from network
         }
 
     }
