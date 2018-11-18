@@ -15,23 +15,19 @@ class MakelaarViewModel @Inject constructor(
     private var repository: MakelaarRepository
 ) : BaseViewModel<List<TopMakelaar>>() {
 
-    val queryMutableLiveData = MutableLiveData<String>()
+    private val queryMutableLiveData = MutableLiveData<String>()
 
-
-    init {
-        //callRefresh(true)
-    }
 
     override fun callRefresh(forceUpdate: Boolean) {
         disposables.clear()
-        queryMutableLiveData.value?.let { _ ->
+        queryMutableLiveData.value?.let {
             disposables += repository.execute(
                 Repository.Params(
                     queryMutableLiveData.value!!,
                     if (forceUpdate) Repository.UpdateSource.NETWORK else Repository.UpdateSource.CACHE
                 )
             )
-                .subscribe { uiStateLiveData.postValue(it) }
+                .subscribe { uiState -> uiStateLiveData.postValue(uiState) }
         }
 
     }
@@ -44,8 +40,9 @@ class MakelaarViewModel @Inject constructor(
             callRefresh(false)
         } else {
             queryMutableLiveData.value = searchQuery
-            callRefresh(false)
+            callRefresh(true)
         }
+
     }
 
     companion object {

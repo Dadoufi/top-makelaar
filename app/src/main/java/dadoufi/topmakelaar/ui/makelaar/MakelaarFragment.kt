@@ -3,7 +3,6 @@ package dadoufi.topmakelaar.ui.makelaar
 
 import android.os.Bundle
 import android.view.View
-import com.google.android.material.chip.Chip
 import dadoufi.topmakelaar.R
 import dadoufi.topmakelaar.base.BaseFragment
 import dadoufi.topmakelaar.data.entities.TopMakelaar
@@ -29,28 +28,36 @@ class MakelaarFragment : BaseFragment<List<TopMakelaar>, MakelaarViewModel>() {
 
         recyclerView.run {
             setController(controller)
+            setItemSpacingRes(R.dimen.margin_normal)
         }
 
 
-        chipGroup.setOnCheckedChangeListener { chipGroup, i ->
-            when (chipGroup.checkedChipId) {
-                R.id.noFilterChip -> viewModel.setQuery("")
-                R.id.tuinFilterChip -> viewModel.setQuery("tuin")
-            }
+
+        tuinFilterChip.setOnCheckedChangeListener { buttonView, isChecked ->
+            handleChecked(isChecked)
         }
+
 
         if (savedInstanceState != null) {
-            view.findViewById<Chip>(savedInstanceState.getInt("filter")).isChecked = true
+            handleChecked(savedInstanceState.getBoolean("filter", false))
         } else {
-            noFilterChip.isChecked = true
+            viewModel.setQuery("")
         }
 
 
     }
 
+    private fun handleChecked(isChecked: Boolean) {
+        if (isChecked) {
+            viewModel.setQuery("tuin")
+        } else {
+            viewModel.setQuery("")
+        }
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt("filter", chipGroup.checkedChipId)
+        outState.putBoolean("filter", tuinFilterChip.isChecked)
     }
 
     override fun handleSuccessState(data: List<TopMakelaar>?) {
