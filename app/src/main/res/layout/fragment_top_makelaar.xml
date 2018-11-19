@@ -1,59 +1,60 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/parentConstraintLayout"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:ignore="MissingConstraints">
+<androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/parentConstraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:ignore="MissingConstraints">
 
     <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appbar"
-        style="@style/Widget.AppBar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent">
+            android:id="@+id/appbar"
+            style="@style/Widget.AppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:layout_constraintTop_toTopOf="parent">
 
 
         <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:title="@string/top_makelaar" />
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:title="@string/top_makelaar"/>
 
 
     </com.google.android.material.appbar.AppBarLayout>
 
 
     <com.google.android.material.chip.Chip
-        android:id="@+id/tuinFilterChip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/margin_small"
-        android:checkable="true"
-        android:checked="false"
-        android:clickable="true"
-        android:focusable="true"
-        android:text="@string/tuin"
-        app:chipBackgroundColor="@drawable/bg_chip"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appbar" />
+            android:id="@+id/tuinFilterChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_small"
+            android:checkable="true"
+            android:checked="false"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/tuin"
+            app:chipBackgroundColor="@drawable/bg_chip"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/appbar"/>
 
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefresh"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="@dimen/margin_normal"
-        android:layout_marginTop="@dimen/margin_normal"
-        android:layout_marginEnd="@dimen/margin_normal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tuinFilterChip">
+            android:id="@+id/swipeRefresh"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/margin_normal"
+            android:layout_marginTop="@dimen/margin_normal"
+            android:layout_marginEnd="@dimen/margin_normal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tuinFilterChip">
 
 
-        <include layout="@layout/include_recycler_view" />
+        <include layout="@layout/include_recycler_view"/>
 
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
